@@ -81,7 +81,8 @@ def get_common_payload_template():
             'source (name only)', 
             'data_contacts', 
             'data_contributors', 
-            'links'
+            'links',
+            'description'
         ],
         'usage': 'payload = <PublishablePayload_subclass>(**input_dictionary); metadata = payload.metapayload'
     }
@@ -277,7 +278,27 @@ class MDFPayload(PublishablePayload):
 
 
 class MCPayload(PublishablePayload):
-    pass
+    """
+    Examples
+    --------
+    >>> scripty = Human(given_name='Totally', family_name='NotARobot', email='a@a.com', institution='Earth')
+    >>> payload = MCPayload(title='Test Payload', source={'name': 'whatever', 'producer': 'test producer', 'url': 'http://www.testurl.org', 'tags': ['these', 'are', 'source', 'tags']}, data_contacts=[scripty], data_contributors=[scripty], links={'landing_page':'http://www.globus.org'}, licenses=[{'name': 'license name', 'url': 'http://www.licenseurl.org', 'description': 'license description', 'tags': ['license', 'tags']},], 'description': 'material description')
+    >>> payload.metapayload
+    {'email': 'a@a.com', 'name': {'family': 'NotARobot', 'given': 'Totally', 'title': ''}, 'tags': ['contributor']}], 'licenses': [{'description': 'license description', 'name': 'license name', 'tags': ['license', 'tags'], 'url': 'http://www.licenseurl.org'}], 'source': {'producer': 'test producer', 'tags': ['these', 'are', 'source', 'tags'], 'url': 'http://www.testurl.org'}}
+
+    """
+
+    def __init__(self, *args, **kwargs):
+        if 'description' not in kwargs:
+            raise Exception('description is required for Materials Commons')
+        super(MCPayload, self).__init__(*args, **kwargs)
+
+    @property
+    def metapayload(self):
+        return {
+            'name': self['source']['name'],
+            'description': self['description']
+        }
 
 
 class Human(dict):
