@@ -12,3 +12,7 @@ install:
 - pip install --no-deps -e . 
 script:
 - py.test -s --verbose
+env:
+  global:
+    - CI=true
+    - TEST_DOC=true
