@@ -16,21 +16,21 @@ class PublishablePayload(dict):
         super(PublishablePayload, self).__init__()
         self.__dict__ = self
 
-        optionalkeys = ['license',  # str
-                        'citation',  # list of str
-                        'source_name',  # str
-                        'data_contact',  # human
-                        'data_contributor',  # human
-                        'author',  # human
-                        'repository',  # str
-                        'collection',  # str
-                        'tags',  # list of str
-                        'description',  # str
-                        'raw',  # str
-                        'links',  # dict
-                        'year',  # int
-                        'composition']  # str
-        for prop in optionalkeys:
+        self._optionalkeys = ['license',  # str
+                              'citation',  # list of str
+                              'source_name',  # str
+                              'data_contact',  # human
+                              'data_contributor',  # human
+                              'author',  # human
+                              'repository',  # str
+                              'collection',  # str
+                              'tags',  # list of str
+                              'description',  # str
+                              'raw',  # str
+                              'links',  # dict
+                              'year',  # int
+                              'composition']  # str
+        for prop in self._optionalkeys:
             self[prop] = kwargs.get(prop, None)
 
         self['title'] = title
@@ -38,6 +38,7 @@ class PublishablePayload(dict):
         self['data_contact'] = data_contact
         self['data_contributor'] = data_contributor
         self['links'] = links
+        self['additionalProperties'] = kwargs
 
     @property
     def metapayload(self):
@@ -68,20 +69,27 @@ class MDFPayload(PublishablePayload):
         dataset = {
             "mdf": {
                 "title": self.title,
-                "acl": [],  # TODO: what goes here?
+                "acl": ["public"],  # TODO: allow list of globus auth uuids or "public"
                 "source_name": self.source_name,
                 "citation": self.citation,
                 "links": self.links,
-                "data_contact": [dict(data_contact) for data_contact in self.data_contacts],
+                "data_contact": self.data_contact,
                 "data_contributor": [dict(data_contributor) for data_contributor in self.data_contributors],
-                "ingest_date": datetime.datetime.now().strftime('%b %d, %Y'),  # TODO: shouldn't this be implied?
-                "metadata_version": "1.1",
-                "mdf_id": "1",
-                "resource_type": "dataset"
+                # "ingest_date": datetime.datetime.now().strftime('%b %d, %Y'),  # Note: these commented keys are
+                # "metadata_version": "1.1",                                     # populated automatically!
+                # "mdf_id": "1",
+                # "resource_type": "dataset",
+                # "additionalProperties": self.additionalProperties
             },
-            "dc": {},
-            "misc": {}
+            "dc": {},  # TODO: allow datacite keys to go here?
+            self.source_name: self.additionalProperties
         }
+
+        # Populate optional keys if they have been set
+        for key in self._optionalkeys:
+            val = getattr(self, key)
+            if val is not None:
+                dataset['mdf'][key] = val
 
         return dataset
 
