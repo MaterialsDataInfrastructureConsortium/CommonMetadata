@@ -44,6 +44,8 @@ class PublishablePayload(dict):
     def metapayload(self):
         raise NotImplementedError
 
+    def ingest(self):
+        raise NotImplementedError
 
 class CITPayload(PublishablePayload):
     pass
