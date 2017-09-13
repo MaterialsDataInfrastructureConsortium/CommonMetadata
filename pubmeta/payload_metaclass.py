@@ -13,11 +13,12 @@ import json
 import datetime
 
 
-def get_common_payload_template():
+def get_common_payload_template(services=None):
     """
     Get a template dictionary that can be used to create a payload object.
 
-    TODO: implement
+    TODO: services s/b a list. Specify required fields for each service in list.
+        None means all services.
     """
     return {
         'template': {
@@ -89,53 +90,15 @@ def get_common_payload_template():
 
 
 class PublishablePayload(dict):
-    def __init__(self, title, source, data_contacts, data_contributors, links, **kwargs):
+    def __init__(self, **kwargs):
         """
-        Parameters
-        ----------
-        title:              str
-        source:             dict: { 'name': str, 'producer': str, 'url': str, 'tags': list(str)}
-        data_contact:       Human
-        data_contributor:   Human
-        links:              dict
+        TODO(Write docstring.)
         """
-        if 'description' not in kwargs:
-            raise Exception('description is required for Materials Commons')
         super(PublishablePayload, self).__init__()
         self.__dict__ = self
-
-        self._optionalkeys = ['licenses',    # list of dicts: {
-                                            #     'name': str,
-                                            #     'description': str,
-                                            #     'url': str,
-                                            #     'tags': list of str
-                                            # }
-                              'citations',  # list of str
-                              'authors',  # list of human
-                              'repository',  # str
-                              'collection',  # str
-                              'tags',  # list of str
-                              'description',  # str
-                              'raw',  # str
-                              'links',  # dict
-                              'year',  # int
-                              'composition']  # str
+        self._optionalkeys = get_common_payload_template()['template'].keys()
         for prop in self._optionalkeys:
             self[prop] = kwargs.get(prop, None)
-
-        # validate the source parameter 
-        # (require MDF field (name), but not the citrine fields)
-        expected_source_keys = ['name',]
-        for key in expected_source_keys:
-            if key not in source:
-                raise Exception('source requires a %s field' % key)
-
-        self['title'] = title
-        self['source'] = source
-        self['data_contacts'] = data_contacts
-        self['data_contributors'] = data_contributors
-        self['links'] = links
-        self['additionalProperties'] = kwargs
 
     @property
     def metapayload(self):
@@ -162,7 +125,7 @@ class CITPayload(PublishablePayload):
     """
 
     def __init__(self, *args, **kwargs):
-        super(CITPayload, self).__init__(*args, **kwargs)        
+        super(CITPayload, self).__init__(**kwargs)        
         self.metadata = pobj.System()
         self._add_source()
         self._add_people()
@@ -173,6 +136,9 @@ class CITPayload(PublishablePayload):
         return json.loads(pif.dumps(self.metadata))
 
     def _add_source(self):
+        if 'source' not in self or not isinstance(self['source', dict):
+            return
+
         if 'producer' in self['source']:
             producer = self['source']['producer']
         if 'url' in self['source']:
@@ -244,6 +210,15 @@ class MDFPayload(PublishablePayload):
     """
 
     def __init__(self, *args, **kwargs):
+        # TODO(Get required keys for each service from a config file (.ini).)
+        required_keys = ['title', 'source', 'data_contacts', 'data_contributors', 'links']
+        for key in required_keys:
+            if key not in self:
+                raise Exception("%s requires %s" % (self.__class__.__name__, key))
+        if not isinstance(self['source'], dict):
+            raise Exception('source must be a dictionary')
+        if 'name' not in source:
+            raise Exception('source must contain "name"')
         super(MDFPayload, self).__init__(*args, **kwargs)
 
     @property
@@ -289,6 +264,15 @@ class MCPayload(PublishablePayload):
     """
 
     def __init__(self, *args, **kwargs):
+        # TODO(Get required keys for each service from a config file (.ini).)
+        required_keys = ['name', 'description']
+        for key in required_keys:
+            if key not in self:
+                raise Exception("%s requires %s" % (self.__class__.__name__, key))
+        if not isinstance(self['source'], dict):
+            raise Exception('source must be a dictionary')
+        if 'name' not in source:
+            raise Exception('source must contain "name"')
         super(MCPayload, self).__init__(*args, **kwargs)
 
     @property
