@@ -33,7 +33,7 @@ class PublishablePayload(dict):
                                             #     'url': str,
                                             #     'tags': list of str
                                             # }
-                              'citation',  # list of str
+                              'citations',  # list of str
                               'authors',  # list of human
                               'repository',  # str
                               'collection',  # str
@@ -59,6 +59,92 @@ class PublishablePayload(dict):
         self['data_contributors'] = data_contributors
         self['links'] = links
         self['additionalProperties'] = kwargs
+
+    def get_common_payload_template(self):
+        """
+        Get a template dictionary that can be used to create a payload object.
+
+        TODO: implement
+        """
+                citrine_name_info = {
+                    'given': person.get('given_name', ''),
+                    'family': person.get('family_name', ''),
+                    'title': person.get('title', ''),
+                }
+                citrine_name = pobj.Name(**citrine_name_info)
+                citrine_person_info = {
+                    'name': citrine_name,
+                    'orcid': person.get('orcid', None),
+                    'email': person.get('email', None),
+                    'tags': tags
+                }
+        return {
+            'template': {
+                'title': 'string',
+                'source': {
+                    'name': 'string',
+                    'producer': 'string',
+                    'url': 'url string',
+                    'tags': ['string']
+                },
+                'data_contacts': [
+                    {
+                        'given_name': 'string',
+                        'family_name': 'string',
+                        'title': 'string',
+                        'orcid': 'TBD',
+                        'email': 'TBD',
+                        'tags': ['string']
+                    }
+                ],
+                'data_contributors': [
+                    {
+                        'given_name': 'string',
+                        'family_name': 'string',
+                        'title': 'string',
+                        'orcid': 'TBD',
+                        'email': 'TBD',
+                        'tags': ['string']
+                    }
+                ],
+                'links': 'TBD',
+                'authors': [
+                    {
+                        'given_name': 'string',
+                        'family_name': 'string',
+                        'title': 'string',
+                        'orcid': 'TBD',
+                        'email': 'TBD',
+                        'tags': ['string']
+                    }
+                ],
+                'licenses': [
+                    {
+                        'name': 'string',
+                        'description': 'string',
+                        'url': 'string',
+                        'tags': ['string']
+                    }
+                ],
+                'citations': 'TBD',
+                'repository': 'TBD',
+                'collection': 'TBD',
+                'tags': ['string'],
+                'description': 'string',
+                'raw': 'TBD',
+                'year': 'integer',
+                'composition': 'TBD'
+            },
+            'required': [
+                'title', 
+                'source (name only)', 
+                'data_contacts', 
+                'data_contributors', 
+                'links'
+            ],
+            'usage': 'payload = <PublishablePayload_subclass>(**input_dictionary); metadata = payload.metapayload'
+        }
+
 
     @property
     def metapayload(self):
@@ -162,7 +248,7 @@ class MDFPayload(PublishablePayload):
     >>> scripty = Human(given_name='Totally', family_name='NotARobot', email='a@a.com', institution='Earth')
     >>> payload = MDFPayload(title='Test Payload', source={'name': 'Doctest Example Script'}, data_contacts=[scripty], data_contributors=[scripty], links={'landing_page':'http://www.globus.org'})
     >>> payload.metapayload
-    {'Doctest Example Script': {}, 'dc': {}, 'mdf': {'acl': ['public'],  'citation': None,  'data_contact': [{'email': 'a@a.com', 'family_name': 'NotARobot', 'given_name': 'Totally', 'institution': 'Earth'}], 'data_contributor': [{'email': 'a@a.com', 'family_name': 'NotARobot', 'given_name': 'Totally', 'institution': 'Earth'}], 'links': {'landing_page': 'http://www.globus.org'}, 'source_name': 'Doctest Example Script', 'title': 'Test Payload'}}
+    {'Doctest Example Script': {}, 'dc': {}, 'mdf': {'acl': ['public'],  'citations': None,  'data_contact': [{'email': 'a@a.com', 'family_name': 'NotARobot', 'given_name': 'Totally', 'institution': 'Earth'}], 'data_contributor': [{'email': 'a@a.com', 'family_name': 'NotARobot', 'given_name': 'Totally', 'institution': 'Earth'}], 'links': {'landing_page': 'http://www.globus.org'}, 'source_name': 'Doctest Example Script', 'title': 'Test Payload'}}
 
     """
 
@@ -176,7 +262,7 @@ class MDFPayload(PublishablePayload):
                 "title": self.title,
                 "acl": ["public"],  # TODO: allow list of globus auth uuids or "public"
                 "source_name": self.source['name'],
-                "citation": self.citation,
+                "citations": self.citations,
                 "links": self.links,
                 "data_contact": self.data_contacts,
                 "data_contributor": [dict(data_contributor) for data_contributor in self.data_contributors],
