@@ -56,7 +56,7 @@ class MDFPayload(PublishablePayload):
     >>> scripty = Human(given_name='Totally', family_name='NotARobot', email='a@a.com', institution='Earth')
     >>> payload = MDFPayload(title='Test Payload', source_name='Doctest Example Script', data_contact=scripty, data_contributor=scripty, links={'landing_page':'http://www.globus.org'})
     >>> payload.metapayload
-    {'mdf': {'title': 'Test Payload', 'acl': [], 'source_name': 'Doctest Example Script', 'citation': None, 'links': {'landing_page': 'http://www.globus.org'}, 'data_contact': {}, 'data_contributor': {}, 'ingest_date': 'Sep 13, 2017', 'metadata_version': '1.1', 'mdf_id': '1', 'resource_type': 'dataset'}, 'dc': {}, 'misc': {}}
+    {'mdf': {'title': 'Test Payload', 'acl': [], 'source_name': 'Doctest Example Script', 'citation': None, 'links': {'landing_page': 'http://www.globus.org'}, 'data_contact': {'given_name': 'Totally', 'family_name': 'NotARobot', 'email': 'a@a.com', 'institution': 'Earth'}, 'data_contributor': {'given_name': 'Totally', 'family_name': 'NotARobot', 'email': 'a@a.com', 'institution': 'Earth'}, 'ingest_date': 'Sep 13, 2017', 'metadata_version': '1.1', 'mdf_id': '1', 'resource_type': 'dataset'}, 'dc': {}, 'misc': {}}
 
     """
 
@@ -72,8 +72,8 @@ class MDFPayload(PublishablePayload):
                 "source_name": self.source_name,
                 "citation": self.citation,
                 "links": self.links,
-                "data_contact": dict(self.data_contact),
-                "data_contributor": dict(self.data_contributor),
+                "data_contact": [dict(data_contact) for data_contact in self.data_contacts],
+                "data_contributor": [dict(data_contributor) for data_contributor in self.data_contributors],
                 "ingest_date": datetime.datetime.now().strftime('%b %d, %Y'),  # TODO: shouldn't this be implied?
                 "metadata_version": "1.1",
                 "mdf_id": "1",
@@ -94,3 +94,7 @@ class Human(dict):
     def __init__(self, given_name, family_name, email='', institution=''):
         super(Human, self).__init__()
         self.__dict__ = self
+        self['given_name'] = given_name
+        self['family_name'] = family_name
+        self['email'] = email
+        self['institution'] = institution
