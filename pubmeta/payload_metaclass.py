@@ -13,6 +13,80 @@ import json
 import datetime
 
 
+def get_common_payload_template():
+    """
+    Get a template dictionary that can be used to create a payload object.
+
+    TODO: implement
+    """
+    return {
+        'template': {
+            'title': 'string',
+            'source': {
+                'name': 'string',
+                'producer': 'string',
+                'url': 'url string',
+                'tags': ['string']
+            },
+            'data_contacts': [
+                {
+                    'given_name': 'string',
+                    'family_name': 'string',
+                    'title': 'string',
+                    'orcid': 'TBD',
+                    'email': 'TBD',
+                    'tags': ['string']
+                }
+            ],
+            'data_contributors': [
+                {
+                    'given_name': 'string',
+                    'family_name': 'string',
+                    'title': 'string',
+                    'orcid': 'TBD',
+                    'email': 'TBD',
+                    'tags': ['string']
+                }
+            ],
+            'links': 'TBD',
+            'authors': [
+                {
+                    'given_name': 'string',
+                    'family_name': 'string',
+                    'title': 'string',
+                    'orcid': 'TBD',
+                    'email': 'TBD',
+                    'tags': ['string']
+                }
+            ],
+            'licenses': [
+                {
+                    'name': 'string',
+                    'description': 'string',
+                    'url': 'string',
+                    'tags': ['string']
+                }
+            ],
+            'citations': 'TBD',
+            'repository': 'TBD',
+            'collection': 'TBD',
+            'tags': ['string'],
+            'description': 'string',
+            'raw': 'TBD',
+            'year': 'integer',
+            'composition': 'TBD'
+        },
+        'required': [
+            'title', 
+            'source (name only)', 
+            'data_contacts', 
+            'data_contributors', 
+            'links'
+        ],
+        'usage': 'payload = <PublishablePayload_subclass>(**input_dictionary); metadata = payload.metapayload'
+    }
+
+
 class PublishablePayload(dict):
     def __init__(self, title, source, data_contacts, data_contributors, links, **kwargs):
         """
@@ -59,92 +133,6 @@ class PublishablePayload(dict):
         self['data_contributors'] = data_contributors
         self['links'] = links
         self['additionalProperties'] = kwargs
-
-    def get_common_payload_template(self):
-        """
-        Get a template dictionary that can be used to create a payload object.
-
-        TODO: implement
-        """
-        citrine_name_info = {
-            'given': person.get('given_name', ''),
-            'family': person.get('family_name', ''),
-            'title': person.get('title', ''),
-        }
-        citrine_name = pobj.Name(**citrine_name_info)
-        citrine_person_info = {
-            'name': citrine_name,
-            'orcid': person.get('orcid', None),
-            'email': person.get('email', None),
-            'tags': tags
-        }
-        return {
-            'template': {
-                'title': 'string',
-                'source': {
-                    'name': 'string',
-                    'producer': 'string',
-                    'url': 'url string',
-                    'tags': ['string']
-                },
-                'data_contacts': [
-                    {
-                        'given_name': 'string',
-                        'family_name': 'string',
-                        'title': 'string',
-                        'orcid': 'TBD',
-                        'email': 'TBD',
-                        'tags': ['string']
-                    }
-                ],
-                'data_contributors': [
-                    {
-                        'given_name': 'string',
-                        'family_name': 'string',
-                        'title': 'string',
-                        'orcid': 'TBD',
-                        'email': 'TBD',
-                        'tags': ['string']
-                    }
-                ],
-                'links': 'TBD',
-                'authors': [
-                    {
-                        'given_name': 'string',
-                        'family_name': 'string',
-                        'title': 'string',
-                        'orcid': 'TBD',
-                        'email': 'TBD',
-                        'tags': ['string']
-                    }
-                ],
-                'licenses': [
-                    {
-                        'name': 'string',
-                        'description': 'string',
-                        'url': 'string',
-                        'tags': ['string']
-                    }
-                ],
-                'citations': 'TBD',
-                'repository': 'TBD',
-                'collection': 'TBD',
-                'tags': ['string'],
-                'description': 'string',
-                'raw': 'TBD',
-                'year': 'integer',
-                'composition': 'TBD'
-            },
-            'required': [
-                'title', 
-                'source (name only)', 
-                'data_contacts', 
-                'data_contributors', 
-                'links'
-            ],
-            'usage': 'payload = <PublishablePayload_subclass>(**input_dictionary); metadata = payload.metapayload'
-        }
-
 
     @property
     def metapayload(self):
