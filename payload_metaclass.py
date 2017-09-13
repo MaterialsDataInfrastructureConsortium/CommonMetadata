@@ -30,6 +30,8 @@ class PublishablePayload(dict):
         self._optionalkeys = ['license',  # str
                               'citation',  # list of str
                               'source_name',  # str
+                              'source_url', # str
+                              'source_tags', # list of str
                               'data_contact',  # human
                               'data_contributor',  # human
                               'author',  # human
@@ -60,6 +62,15 @@ class PublishablePayload(dict):
 
 
 class CITPayload(PublishablePayload):
+    """
+    Construct payload for POST call to Citrine service.
+
+    Implemented fields (so far) include contacts and source.  
+    These roughly correspond to the fields required by MDF.
+
+    doctests will be added soon.
+    """
+
     def __init__(self, *args, **kwargs):
         super(CITPayload, self).__init__(*args, **kwargs)        
         self.metadata = pobj.System()
@@ -71,7 +82,29 @@ class CITPayload(PublishablePayload):
         return json.loads(pif.dumps(self.metadata))
 
     def _add_source(self):
-        pass
+        if isinstance(self['source_name'], str):
+            producer = self['source_name']
+        else:
+            producer = None 
+
+        if isinstance(self['source_url'], str):
+            url = self['source_url']
+        else:
+            url = None
+
+        if isinstance(self['source_tags'], list):
+            tags = []
+            for item in self['source_tags']:
+                if isinstance(item, str):
+                    tags.append(item)
+        else:
+            tags = None
+
+        self.metadata.source = pobj.Source(
+            producer=producer,
+            url=url,
+            tags=tags
+        )
 
     def _add_people(self):
         people = []
