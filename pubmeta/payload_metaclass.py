@@ -134,7 +134,6 @@ class PublishablePayload(dict):
         self['links'] = links
         self['additionalProperties'] = kwargs
 
-
     @property
     def metapayload(self):
         raise NotImplementedError

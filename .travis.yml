@@ -1,0 +1,14 @@
+language: python
+sudo: false
+python:
+- '2.7'
+- '3.3'
+- '3.4'
+- '3.5'
+- '3.6'
+install:
+- pip install pytest
+- pip install -U -r requirements.txt
+- pip install --no-deps -e . 
+script:
+- py.test -s --verbose
