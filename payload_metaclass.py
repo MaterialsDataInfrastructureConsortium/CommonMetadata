@@ -14,7 +14,7 @@ import datetime
 
 
 class PublishablePayload(dict):
-    def __init__(self, **kwargs):
+    def __init__(self, title, source_name, data_contact, data_contributor, links, **kwargs):
         """
         Parameters
         ----------
@@ -26,13 +26,6 @@ class PublishablePayload(dict):
         """
         super(PublishablePayload, self).__init__()
         self.__dict__ = self
-
-        self['title'] = title
-        self['source_name'] = source_name
-        self['data_contact'] = data_contact
-        self['data_contributor'] = data_contributor
-        self['links'] = links
-        self['additionalProperties'] = kwargs
 
         self._optionalkeys = ['license',  # str
                               'citation',  # list of str
@@ -50,6 +43,13 @@ class PublishablePayload(dict):
                               'composition']  # str
         for prop in self._optionalkeys:
             self[prop] = kwargs.get(prop, None)
+
+        self['title'] = title
+        self['source_name'] = source_name
+        self['data_contact'] = data_contact
+        self['data_contributor'] = data_contributor
+        self['links'] = links
+        self['additionalProperties'] = kwargs
 
     @property
     def metapayload(self):
