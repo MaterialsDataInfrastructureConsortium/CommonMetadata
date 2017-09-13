@@ -99,6 +99,8 @@ class PublishablePayload(dict):
         data_contributor:   Human
         links:              dict
         """
+        if 'description' not in kwargs:
+            raise Exception('description is required for Materials Commons')
         super(PublishablePayload, self).__init__()
         self.__dict__ = self
 
@@ -235,7 +237,7 @@ class MDFPayload(PublishablePayload):
     Examples
     --------
     >>> scripty = Human(given_name='Totally', family_name='NotARobot', email='a@a.com', institution='Earth')
-    >>> payload = MDFPayload(title='Test Payload', source={'name': 'Doctest Example Script'}, data_contacts=[scripty], data_contributors=[scripty], links={'landing_page':'http://www.globus.org'})
+    >>> payload = MDFPayload(title='Test Payload', source={'name': 'Doctest Example Script'}, data_contacts=[scripty], data_contributors=[scripty], links={'landing_page':'http://www.globus.org'}, description='some material')
     >>> payload.metapayload
     {'Doctest Example Script': {}, 'dc': {}, 'mdf': {'acl': ['public'],  'citations': None,  'data_contact': [{'email': 'a@a.com', 'family_name': 'NotARobot', 'given_name': 'Totally', 'institution': 'Earth'}], 'data_contributor': [{'email': 'a@a.com', 'family_name': 'NotARobot', 'given_name': 'Totally', 'institution': 'Earth'}], 'links': {'landing_page': 'http://www.globus.org'}, 'source_name': 'Doctest Example Script', 'title': 'Test Payload'}}
 
@@ -275,7 +277,6 @@ class MDFPayload(PublishablePayload):
         return dataset
 
 
-
 class MCPayload(PublishablePayload):
     """
     Examples
@@ -288,8 +289,6 @@ class MCPayload(PublishablePayload):
     """
 
     def __init__(self, *args, **kwargs):
-        if 'description' not in kwargs:
-            raise Exception('description is required for Materials Commons')
         super(MCPayload, self).__init__(*args, **kwargs)
 
     @property
