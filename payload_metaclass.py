@@ -68,7 +68,13 @@ class CITPayload(PublishablePayload):
     Implemented fields (so far) include contacts and source.  
     These roughly correspond to the fields required by MDF.
 
-    doctests will be added soon.
+    Examples
+    --------
+    >>> scripty = Human(given_name='Totally', family_name='NotARobot', email='a@a.com', institution='Earth')
+    >>> payload = CITPayload(title='Test Payload', source_name='Doctest Example Script', source_url='http://www.someurl.com', source_tags=['these', 'are', 'tags'], data_contact=[scripty], data_contributor=[scripty], links={'landing_page':'http://www.globus.org'})
+    >>> payload.metapayload
+    {'email': 'a@a.com', 'name': {'family': 'NotARobot', 'given': 'Totally', 'title': ''}, 'tags': ['contributor']}], 'source': {'producer': 'Doctest Example Script', 'tags': ['these', 'are', 'tags'], 'url': 'http://www.someurl.com'}}
+
     """
 
     def __init__(self, *args, **kwargs):
@@ -110,7 +116,6 @@ class CITPayload(PublishablePayload):
         people = []
         
         def add_to_list(person_list, tags):
-            print(person_list)
             for person in person_list:
                 citrine_name_info = {
                     'given': person.get('given_name', ''),
