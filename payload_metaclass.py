@@ -76,7 +76,7 @@ class CITPayload(PublishablePayload):
     Examples
     --------
     >>> scripty = Human(given_name='Totally', family_name='NotARobot', email='a@a.com', institution='Earth')
-    >>> payload = CITPayload(title='Test Payload', source_name='Doctest Example Script', source_url='http://www.someurl.com', source_tags=['these', 'are', 'tags'], data_contact=[scripty], data_contributor=[scripty], links={'landing_page':'http://www.globus.org'}, 'licenses': [{'name': 'license name', 'url': 'http://www.licenseurl.org', 'description': 'license description', 'tags'=['license', 'tags']},])
+    >>> payload = CITPayload(title='Test Payload', source_name='Doctest Example Script', source_url='http://www.someurl.com', source_tags=['these', 'are', 'tags'], data_contact=[scripty], data_contributor=[scripty], links={'landing_page':'http://www.globus.org'}, licenses=[{'name': 'license name', 'url': 'http://www.licenseurl.org', 'description': 'license description', 'tags': ['license', 'tags']},])
     >>> payload.metapayload
     {'email': 'a@a.com', 'name': {'family': 'NotARobot', 'given': 'Totally', 'title': ''}, 'tags': ['contributor']}], 'source': {'producer': 'Doctest Example Script', 'tags': ['these', 'are', 'tags'], 'url': 'http://www.someurl.com'}}
 
@@ -87,6 +87,7 @@ class CITPayload(PublishablePayload):
         self.metadata = pobj.System()
         self._add_source()
         self._add_people()
+        self._add_licenses()
 
     @property
     def metapayload(self):
@@ -146,20 +147,20 @@ class CITPayload(PublishablePayload):
         
         self.metadata.contacts = people
 
-        def _add_licenses(self):
-            if 'licenses' not in self or not isinstance(self['licenses'], list):
-                return
+    def _add_licenses(self):
+        if 'licenses' not in self or not isinstance(self['licenses'], list):
+            return
 
-            citrine_licenses = []
+        citrine_licenses = []
 
-            for license in self[licenses]:
-                try:
-                    citrine_license = pobj.License(**license)
-                    citrine_licenses.append(citrine_license)
-                except Exception as ex:
-                    print(ex)
+        for license in self['licenses']:
+            try:
+                citrine_license = pobj.License(**license)
+                citrine_licenses.append(citrine_license)
+            except Exception as ex:
+                print(ex)
 
-            self.metadata.licenses = citrine_licenses
+        self.metadata.licenses = citrine_licenses
 
 
 class MDFPayload(PublishablePayload):
