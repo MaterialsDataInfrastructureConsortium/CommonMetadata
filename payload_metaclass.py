@@ -60,17 +60,20 @@ class PublishablePayload(dict):
 
 
 class CITPayload(PublishablePayload):
-    def __init__(self, **kwargs):
-        super(CITPayload, self).__init__()
-        metadata = pobj.System()
-        self._add_source(metadata)
-        self._add_people(metadata)
-        self.__dict__ = json.loads(pif.dumps(metadata))
+    def __init__(self, *args, **kwargs):
+        super(CITPayload, self).__init__(*args, **kwargs)        
+        self.metadata = pobj.System()
+        self._add_source()
+        self._add_people()
 
-    def _add_source(self, metadata):
+    @property
+    def metapayload(self):
+        return json.loads(pif.dumps(self.metadata))
+
+    def _add_source(self):
         pass
 
-    def _add_people(self, metadata):
+    def _add_people(self):
         people = []
         
         def add_to_list(person_list, tags):
@@ -91,13 +94,13 @@ class CITPayload(PublishablePayload):
                 people.append(citrine_person)
                 
         if 'authors' in self:
-            add_to_list(person_list=self['authors'], tags=['author'])
+            add_to_list(person_list=self['author'], tags=['author'])
         if 'data_contacts' in self:
-            add_to_list(person_list=self['data_contacts'], tags=['contact'])
+            add_to_list(person_list=self['data_contact'], tags=['contact'])
         if 'data_contributors' in self:
-            add_to_list(person_list=self['data_contributors'], tags=['contributor'])
+            add_to_list(person_list=self['data_contributor'], tags=['contributor'])
         
-        metadata.contacts = people
+        self.metadata.contacts = people
 
 
 
