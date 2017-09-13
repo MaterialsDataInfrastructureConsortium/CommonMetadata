@@ -14,12 +14,12 @@ import datetime
 
 
 class PublishablePayload(dict):
-    def __init__(self, title, source_name, data_contact, data_contributor, links, **kwargs):
+    def __init__(self, title, source, data_contacts, data_contributors, links, **kwargs):
         """
         Parameters
         ----------
         title:              str
-        source_name:        str
+        source:             dict: { 'name': str, 'producer': str, 'url': str, 'tags': list(str)}
         data_contact:       Human
         data_contributor:   Human
         links:              dict
@@ -34,12 +34,7 @@ class PublishablePayload(dict):
                                             #     'tags': list of str
                                             # }
                               'citation',  # list of str
-                              'source_name',  # str
-                              'source_url', # str
-                              'source_tags', # list of str
-                              'data_contact',  # list of human
-                              'data_contributor',  # list of human
-                              'author',  # list of human
+                              'authors',  # list of human
                               'repository',  # str
                               'collection',  # str
                               'tags',  # list of str
@@ -51,10 +46,17 @@ class PublishablePayload(dict):
         for prop in self._optionalkeys:
             self[prop] = kwargs.get(prop, None)
 
+        # validate the source parameter 
+        # (require MDF field (name), but not the citrine fields)
+        expected_source_keys = ['name',]
+        for key in expected_source_keys:
+            if key not in source:
+                raise Exception('source requires a %s field' % key)
+
         self['title'] = title
-        self['source_name'] = source_name
-        self['data_contact'] = data_contact
-        self['data_contributor'] = data_contributor
+        self['source'] = source
+        self['data_contacts'] = data_contacts
+        self['data_contributors'] = data_contributors
         self['links'] = links
         self['additionalProperties'] = kwargs
 
@@ -76,9 +78,9 @@ class CITPayload(PublishablePayload):
     Examples
     --------
     >>> scripty = Human(given_name='Totally', family_name='NotARobot', email='a@a.com', institution='Earth')
-    >>> payload = CITPayload(title='Test Payload', source_name='Doctest Example Script', source_url='http://www.someurl.com', source_tags=['these', 'are', 'tags'], data_contact=[scripty], data_contributor=[scripty], links={'landing_page':'http://www.globus.org'}, licenses=[{'name': 'license name', 'url': 'http://www.licenseurl.org', 'description': 'license description', 'tags': ['license', 'tags']},])
+    >>> payload = CITPayload(title='Test Payload', source={'name': 'whatever', 'producer': 'test producer', 'url': 'http://www.testurl.org', 'tags': ['these', 'are', 'source', 'tags']}, data_contacts=[scripty], data_contributors=[scripty], links={'landing_page':'http://www.globus.org'}, licenses=[{'name': 'license name', 'url': 'http://www.licenseurl.org', 'description': 'license description', 'tags': ['license', 'tags']},])
     >>> payload.metapayload
-    {'email': 'a@a.com', 'name': {'family': 'NotARobot', 'given': 'Totally', 'title': ''}, 'tags': ['contributor']}], 'source': {'producer': 'Doctest Example Script', 'tags': ['these', 'are', 'tags'], 'url': 'http://www.someurl.com'}}
+    {'email': 'a@a.com', 'name': {'family': 'NotARobot', 'given': 'Totally', 'title': ''}, 'tags': ['contributor']}], 'licenses': [{'description': 'license description', 'name': 'license name', 'tags': ['license', 'tags'], 'url': 'http://www.licenseurl.org'}], 'source': {'producer': 'test producer', 'tags': ['these', 'are', 'source', 'tags'], 'url': 'http://www.testurl.org'}}
 
     """
 
@@ -94,23 +96,12 @@ class CITPayload(PublishablePayload):
         return json.loads(pif.dumps(self.metadata))
 
     def _add_source(self):
-        if isinstance(self['source_name'], str):
-            producer = self['source_name']
-        else:
-            producer = None 
-
-        if isinstance(self['source_url'], str):
-            url = self['source_url']
-        else:
-            url = None
-
-        if isinstance(self['source_tags'], list):
-            tags = []
-            for item in self['source_tags']:
-                if isinstance(item, str):
-                    tags.append(item)
-        else:
-            tags = None
+        if 'producer' in self['source']:
+            producer = self['source']['producer']
+        if 'url' in self['source']:
+            url = self['source']['url']
+        if 'tags' in self['source']:
+            tags = self['source']['tags']
 
         self.metadata.source = pobj.Source(
             producer=producer,
@@ -138,12 +129,12 @@ class CITPayload(PublishablePayload):
                 citrine_person = pobj.Person(**citrine_person_info)
                 people.append(citrine_person)
                 
-        if 'author' in self and isinstance(self['author'], list):
-            add_to_people(person_list=self['author'], tags=['author'])
-        if 'data_contact' in self and isinstance(self['data_contact'], list):
-            add_to_people(person_list=self['data_contact'], tags=['contact'])
-        if 'data_contributor' in self and isinstance(self['data_contributor'], list):
-            add_to_people(person_list=self['data_contributor'], tags=['contributor'])
+        if 'authors' in self and isinstance(self['authors'], list):
+            add_to_people(person_list=self['authors'], tags=['author'])
+        if 'data_contacts' in self and isinstance(self['data_contacts'], list):
+            add_to_people(person_list=self['data_contacts'], tags=['contact'])
+        if 'data_contributors' in self and isinstance(self['data_contributors'], list):
+            add_to_people(person_list=self['data_contributors'], tags=['contributor'])
         
         self.metadata.contacts = people
 
@@ -169,9 +160,9 @@ class MDFPayload(PublishablePayload):
     Examples
     --------
     >>> scripty = Human(given_name='Totally', family_name='NotARobot', email='a@a.com', institution='Earth')
-    >>> payload = MDFPayload(title='Test Payload', source_name='Doctest Example Script', data_contact=scripty, data_contributor=scripty, links={'landing_page':'http://www.globus.org'})
+    >>> payload = MDFPayload(title='Test Payload', source={'name': 'Doctest Example Script'}, data_contacts=[scripty], data_contributors=[scripty], links={'landing_page':'http://www.globus.org'})
     >>> payload.metapayload
-    {'mdf': {'title': 'Test Payload', 'acl': [], 'source_name': 'Doctest Example Script', 'citation': None, 'links': {'landing_page': 'http://www.globus.org'}, 'data_contact': {'given_name': 'Totally', 'family_name': 'NotARobot', 'email': 'a@a.com', 'institution': 'Earth'}, 'data_contributor': {'given_name': 'Totally', 'family_name': 'NotARobot', 'email': 'a@a.com', 'institution': 'Earth'}, 'ingest_date': 'Sep 13, 2017', 'metadata_version': '1.1', 'mdf_id': '1', 'resource_type': 'dataset'}, 'dc': {}, 'misc': {}}
+    {'Doctest Example Script': {}, 'dc': {}, 'mdf': {'acl': ['public'],  'citation': None,  'data_contact': [{'email': 'a@a.com', 'family_name': 'NotARobot', 'given_name': 'Totally', 'institution': 'Earth'}], 'data_contributor': [{'email': 'a@a.com', 'family_name': 'NotARobot', 'given_name': 'Totally', 'institution': 'Earth'}], 'links': {'landing_page': 'http://www.globus.org'}, 'source_name': 'Doctest Example Script', 'title': 'Test Payload'}}
 
     """
 
@@ -184,10 +175,10 @@ class MDFPayload(PublishablePayload):
             "mdf": {
                 "title": self.title,
                 "acl": ["public"],  # TODO: allow list of globus auth uuids or "public"
-                "source_name": self.source_name,
+                "source_name": self.source['name'],
                 "citation": self.citation,
                 "links": self.links,
-                "data_contact": self.data_contact,
+                "data_contact": self.data_contacts,
                 "data_contributor": [dict(data_contributor) for data_contributor in self.data_contributors],
                 # "ingest_date": datetime.datetime.now().strftime('%b %d, %Y'),  # Note: these commented keys are
                 # "metadata_version": "1.1",                                     # populated automatically!
@@ -196,7 +187,8 @@ class MDFPayload(PublishablePayload):
                 # "additionalProperties": self.additionalProperties
             },
             "dc": {},  # TODO: allow datacite keys to go here?
-            self.source_name: self.additionalProperties
+            # TODO: review the following.
+            self.source['name']: self.additionalProperties
         }
 
         # Populate optional keys if they have been set
