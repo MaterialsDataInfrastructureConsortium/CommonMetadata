@@ -66,18 +66,6 @@ class PublishablePayload(dict):
 
         TODO: implement
         """
-                citrine_name_info = {
-                    'given': person.get('given_name', ''),
-                    'family': person.get('family_name', ''),
-                    'title': person.get('title', ''),
-                }
-                citrine_name = pobj.Name(**citrine_name_info)
-                citrine_person_info = {
-                    'name': citrine_name,
-                    'orcid': person.get('orcid', None),
-                    'email': person.get('email', None),
-                    'tags': tags
-                }
         return {
             'template': {
                 'title': 'string',
