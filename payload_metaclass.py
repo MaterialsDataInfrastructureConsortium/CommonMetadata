@@ -77,6 +77,7 @@ class CITPayload(PublishablePayload):
         people = []
         
         def add_to_list(person_list, tags):
+            print(person_list)
             for person in person_list:
                 citrine_name_info = {
                     'given': person.get('given_name', ''),
@@ -93,15 +94,14 @@ class CITPayload(PublishablePayload):
                 citrine_person = pobj.Person(**citrine_person_info)
                 people.append(citrine_person)
                 
-        if 'authors' in self:
+        if 'author' in self and isinstance(self['author'], list):
             add_to_list(person_list=self['author'], tags=['author'])
-        if 'data_contacts' in self:
+        if 'data_contact' in self and isinstance(self['data_contact'], list):
             add_to_list(person_list=self['data_contact'], tags=['contact'])
-        if 'data_contributors' in self:
+        if 'data_contributor' in self and isinstance(self['data_contributor'], list):
             add_to_list(person_list=self['data_contributor'], tags=['contributor'])
         
         self.metadata.contacts = people
-
 
 
 class MDFPayload(PublishablePayload):
