@@ -5,6 +5,9 @@ Services:
     Citrine:                    <link>
     Materials Data Facility:    <link>
     Materials Commons:          <link>
+
+TODO: move service metadata requirements (as specified in the output of 
+the get_common_payload_metadata function) to a config file.
 """
 
 from pypif import pif
@@ -13,6 +16,41 @@ import json
 import datetime
 
 
+def _citrine_metadata_requirements():
+    return None
+
+
+def _materials_commons_metadata_requirements():
+    return {
+        'source': {
+            'name': 'string'
+        },
+        'description': 'string'
+    }
+
+
+def _materials_data_facility_metadata_requirements():
+    return {
+        'title': 'string',
+        'source': {
+            'name': 'string',
+        },
+        'data_contacts': [
+            {
+                'given_name': 'string',
+                'family_name': 'string',
+                'email': 'string',
+            }
+        ],
+        'data_contributors': [
+            {
+                'given_name': 'string',
+                'family_name': 'string',
+                'email': 'string',
+            }
+        ],
+    }
+
 def get_common_payload_template(services=None):
     """
     Get a template dictionary that can be used to create a payload object.
@@ -20,8 +58,23 @@ def get_common_payload_template(services=None):
     TODO: services s/b a list. Specify required fields for each service in list.
         None means all services.
     """
+    available_services = {'citrine', 'materials_commons', 'materials_data_facility'}
+    if services is None or not isinstance(services, list):
+        services = list(available_services)
+    else:
+        services = [service for service in services if service in available_services]
+        if not services:
+            services = list(available_services)
+    combined_requirements = {}
+    for service in services:
+        # TODO(Recursive check dictionaries to make sure all requirements fields are combined.)
+        service_requirements = eval('_%s_metadata_requirements()' % service)
+        if service_requirements:
+            for key in service_requirements:
+                if not key in combined_requirements:
+                    combined_requirements[key] = service_requirements[key]
     return {
-        'template': {
+        'all_fields': {
             'title': 'string',
             'source': {
                 'name': 'string',
@@ -35,7 +88,7 @@ def get_common_payload_template(services=None):
                     'family_name': 'string',
                     'title': 'string',
                     'orcid': 'TBD',
-                    'email': 'TBD',
+                    'email': 'string',
                     'tags': ['string']
                 }
             ],
@@ -45,7 +98,7 @@ def get_common_payload_template(services=None):
                     'family_name': 'string',
                     'title': 'string',
                     'orcid': 'TBD',
-                    'email': 'TBD',
+                    'email': 'string',
                     'tags': ['string']
                 }
             ],
@@ -56,7 +109,7 @@ def get_common_payload_template(services=None):
                     'family_name': 'string',
                     'title': 'string',
                     'orcid': 'TBD',
-                    'email': 'TBD',
+                    'email': 'string',
                     'tags': ['string']
                 }
             ],
@@ -77,15 +130,8 @@ def get_common_payload_template(services=None):
             'year': 'integer',
             'composition': 'TBD'
         },
-        'required': [
-            'title', 
-            'source (name only)', 
-            'data_contacts', 
-            'data_contributors', 
-            'links',
-            'description'
-        ],
-        'usage': 'payload = <PublishablePayload_subclass>(**input_dictionary); metadata = payload.metapayload'
+        'required_fields': combined_requirements,
+        'usage': 'payload = <service class, e.g. CITPayload>(**input_dictionary).metapayload'
     }
 
 
@@ -105,7 +151,7 @@ class PublishablePayload(dict):
                 raise Exception("%s requires %s" % (self.__class__.__name__, key))
                 del kwargs[key]
 
-        self._optionalkeys = get_common_payload_template()['template'].keys()
+        self._optionalkeys = get_common_payload_template()['all_fields'].keys()
         for prop in self._optionalkeys:
             self[prop] = kwargs.get(prop, None)
             if prop in kwargs: del kwargs[prop]
@@ -125,9 +171,6 @@ class CITPayload(PublishablePayload):
     """
     Construct payload for POST call to Citrine service.
 
-    Implemented fields (so far) include contacts and source.  
-    These roughly correspond to the fields required by MDF.
-
     Examples
     --------
     >>> scripty = Human(given_name='Totally', family_name='NotARobot', email='a@a.com', institution='Earth')
@@ -138,35 +181,41 @@ class CITPayload(PublishablePayload):
     """
 
     def __init__(self, *args, **kwargs):
-        self._required_keys = [] # TODO: Is anything required?
+        self._required_keys = [] # Citrine has no metadata requirements.
         super(CITPayload, self).__init__(**kwargs)        
-        self.metadata = pobj.System()
-        self._add_source()
-        self._add_people()
-        self._add_licenses()
 
     @property
     def metapayload(self):
-        return json.loads(pif.dumps(self.metadata))
+        metadata = pobj.System()
+        self._add_source(metadata)
+        self._add_people(metadata)
+        self._add_licenses(metadata)
+        return json.loads(pif.dumps(metadata))
 
-    def _add_source(self):
+    def _add_source(self, metadata):
         if 'source' not in self or not isinstance(self['source'], dict):
             return
 
         if 'producer' in self['source']:
             producer = self['source']['producer']
+        else:
+            producer = None
         if 'url' in self['source']:
             url = self['source']['url']
+        else:
+            url = None
         if 'tags' in self['source']:
             tags = self['source']['tags']
+        else:
+            tags = []
 
-        self.metadata.source = pobj.Source(
+        metadata.source = pobj.Source(
             producer=producer,
             url=url,
             tags=tags
         )
 
-    def _add_people(self):
+    def _add_people(self, metadata):
         people = []
         
         def add_to_people(person_list, tags):
@@ -193,9 +242,9 @@ class CITPayload(PublishablePayload):
         if 'data_contributors' in self and isinstance(self['data_contributors'], list):
             add_to_people(person_list=self['data_contributors'], tags=['contributor'])
         
-        self.metadata.contacts = people
+        metadata.contacts = people
 
-    def _add_licenses(self):
+    def _add_licenses(self, metadata):
         if 'licenses' not in self or not isinstance(self['licenses'], list):
             return
 
@@ -208,7 +257,7 @@ class CITPayload(PublishablePayload):
             except Exception as ex:
                 print(ex)
 
-        self.metadata.licenses = citrine_licenses
+        metadata.licenses = citrine_licenses
 
 
 class MDFPayload(PublishablePayload):
