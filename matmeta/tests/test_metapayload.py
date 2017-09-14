@@ -10,6 +10,7 @@ def test_metapayload():
     )
     kwargs = dict(
         title='Test Payload',
+        description='test description',
         source={
             'name': 'whatever', 
             'producer': 'test producer', 
