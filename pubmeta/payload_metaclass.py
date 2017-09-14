@@ -92,13 +92,26 @@ def get_common_payload_template(services=None):
 class PublishablePayload(dict):
     def __init__(self, **kwargs):
         """
-        TODO(Write docstring.)
+        TODO: write more!!
+
+        Inheriting subclasses can define self._required_keys before running base class __init__ to validate. 
         """
-        super(PublishablePayload, self).__init__()
         self.__dict__ = self
+        self._required_keys = [] # Overriden by subclass
+        super(PublishablePayload, self).__init__()
+
+        for key in self._required_keys:
+            if key not in kwargs:
+                raise Exception("%s requires %s" % (self.__class__.__name__, key))
+                del kwargs[key]
+
         self._optionalkeys = get_common_payload_template()['template'].keys()
         for prop in self._optionalkeys:
             self[prop] = kwargs.get(prop, None)
+            if prop in kwargs: del kwargs[prop]
+
+        # All properties that are not required or optional go to additionalProperties
+        self.additionalProperties = kwargs
 
     @property
     def metapayload(self):
@@ -125,6 +138,7 @@ class CITPayload(PublishablePayload):
     """
 
     def __init__(self, *args, **kwargs):
+        self._required_keys = [] # TODO: Is anything required?
         super(CITPayload, self).__init__(**kwargs)        
         self.metadata = pobj.System()
         self._add_source()
@@ -209,17 +223,14 @@ class MDFPayload(PublishablePayload):
 
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, **kwargs):
         # TODO(Get required keys for each service from a config file (.ini).)
-        required_keys = ['title', 'source', 'data_contacts', 'data_contributors', 'links']
-        for key in required_keys:
-            if key not in self:
-                raise Exception("%s requires %s" % (self.__class__.__name__, key))
-        if not isinstance(self['source'], dict):
+        self._required_keys = ['title', 'source', 'data_contacts', 'data_contributors', 'links']
+        super(MDFPayload, self).__init__(**kwargs)
+        if not isinstance(kwargs['source'], dict):
             raise Exception('source must be a dictionary')
-        if 'name' not in source:
+        if 'name' not in self['source']:
             raise Exception('source must contain "name"')
-        super(MDFPayload, self).__init__(*args, **kwargs)
 
     @property
     def metapayload(self):
@@ -265,14 +276,7 @@ class MCPayload(PublishablePayload):
 
     def __init__(self, *args, **kwargs):
         # TODO(Get required keys for each service from a config file (.ini).)
-        required_keys = ['name', 'description']
-        for key in required_keys:
-            if key not in self:
-                raise Exception("%s requires %s" % (self.__class__.__name__, key))
-        if not isinstance(self['source'], dict):
-            raise Exception('source must be a dictionary')
-        if 'name' not in source:
-            raise Exception('source must contain "name"')
+        self._required_keys = ['name', 'description']
         super(MCPayload, self).__init__(*args, **kwargs)
 
     @property
