@@ -59,7 +59,7 @@ def get_common_payload_template(services=None):
         None means all services.
     """
     available_services = {'citrine', 'materials_commons', 'materials_data_facility'}
-    if services is None or not isinstance(services, list):
+    if services is None:
         services = list(available_services)
     else:
         services = [service for service in services if service in available_services]
