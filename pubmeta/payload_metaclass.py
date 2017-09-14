@@ -49,6 +49,9 @@ def _materials_data_facility_metadata_requirements():
                 'email': 'string',
             }
         ],
+        'links': {
+            'landing_page': 'uri (string)'
+        }
     }
 
 def get_common_payload_template(services=None):
@@ -102,7 +105,9 @@ def get_common_payload_template(services=None):
                     'tags': ['string']
                 }
             ],
-            'links': 'TBD',
+            'links': {
+                'landing_page': 'uri (string)'
+            },
             'authors': [
                 {
                     'given_name': 'string',
@@ -121,14 +126,14 @@ def get_common_payload_template(services=None):
                     'tags': ['string']
                 }
             ],
-            'citations': 'TBD',
-            'repository': 'TBD',
-            'collection': 'TBD',
+            'citations': 'not yet available',
+            'repository': 'not yet available',
+            'collection': 'not yet available',
             'tags': ['string'],
             'description': 'string',
-            'raw': 'TBD',
+            'raw': 'not yet available',
             'year': 'integer',
-            'composition': 'TBD'
+            'composition': 'not yet available'
         },
         'required_fields': combined_requirements,
         'usage': 'payload = <service class, e.g. CITPayload>(**input_dictionary).metapayload'
@@ -288,7 +293,6 @@ class MDFPayload(PublishablePayload):
                 "title": self.title,
                 "acl": ["public"],  # TODO: allow list of globus auth uuids or "public"
                 "source_name": self.source['name'],
-                "citations": self.citations,
                 "links": self.links,
                 "data_contact": self.data_contacts,
                 "data_contributor": [dict(data_contributor) for data_contributor in self.data_contributors],
@@ -299,15 +303,16 @@ class MDFPayload(PublishablePayload):
                 # "additionalProperties": self.additionalProperties
             },
             "dc": {},  # TODO: allow datacite keys to go here?
-            # TODO: review the following.
-            self.source['name']: self.additionalProperties
+            # # TODO: review the following.
+            # self.source['name']: self.additionalProperties
         }
 
         # Populate optional keys if they have been set
-        for key in self._optionalkeys:
-            val = getattr(self, key)
-            if val is not None:
-                dataset['mdf'][key] = val
+        required_keys = set(_materials_data_facility_metadata_requirements().keys())
+        optional_keys = set(get_common_payload_template()['all_fields'].keys()) -  required_keys
+        for key in optional_keys:
+            if key in self and self[key] is not None:
+                dataset['mdf'][key] = self[key]
 
         return dataset
 
