@@ -1,4 +1,4 @@
-from pubmeta.payload_metaclass import *
+from matmeta.payload_metaclass import *
 
 
 def test_metapayload():
