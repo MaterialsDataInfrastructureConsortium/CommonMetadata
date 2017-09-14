@@ -72,7 +72,8 @@ def _validate_inputs(actual_inputs, required_inputs, keypath=None):
     actual_keys = set(actual_inputs.keys())
     required_keys = set(required_inputs.keys())
     if actual_keys.intersection(required_keys) != required_keys:
-        output_keys = {'%s.%s' % (keypath, key) for key in required_keys}
+        prefix = '%s.' if keypath else ''
+        output_keys = {'%s%s' % (prefix, key) for key in required_keys}
         raise Exception("Missing input fields.  Expected %s." % ', '.join(output_keys))
     for key in required_keys:
         # TODO: review the following usage of isinstance.
