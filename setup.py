@@ -7,6 +7,7 @@ setup(
     description='Common support for meta-data',
     author='Jason Thiese',
     author_email="jasonthiese@gmail.com",
+    license="Apache v2",
     packages=find_packages(),
     install_requires=[
         'pypif'
