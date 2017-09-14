@@ -67,7 +67,7 @@ def _validate_inputs(actual_inputs, required_inputs, keypath=None):
         keypath: used internally in recursive function calls.
 
     return:
-        Nothing.  An exception will be raised when a problem is encountered.
+        Nothing.  An exception will be raised if a problem is encountered.
     """
     actual_keys = set(actual_inputs.keys())
     required_keys = set(required_inputs.keys())
