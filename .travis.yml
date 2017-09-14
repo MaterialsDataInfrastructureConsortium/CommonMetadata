@@ -1,5 +1,9 @@
 language: python
 sudo: false
+env:
+  global:
+  - CI=true
+  - TEST_DOC=true
 python:
 - '2.7'
 - '3.3'
@@ -9,10 +13,15 @@ python:
 install:
 - pip install pytest
 - pip install -U -r requirements.txt
-- pip install --no-deps -e . 
+- pip install --no-deps -e .
 script:
 - py.test -s --verbose
-env:
-  global:
-    - CI=true
-    - TEST_DOC=true
+deploy:
+  provider: pypi
+  user: maxhutch
+  password:
+    secure: Yly6UQeSCNdNG2nQXzSONJqqBUhzSWqjlmm26+KTSI1GHEEjhyn6PC21F5WkB/PUeQIAmk+hEMEFN/u5yF18tgF0txETD5xpR2FvkhJfhVSgG1l1vXulFKeirjIUpIGOBzaraMq4fjKaeTMmdMsRiu0FVpRrqyyhpngnRBYfwmp2vNz/3m4U6w6ELgds+yQqMze2eTATaWV4I3A4jSrPC4Mak7DIc26J/EEfIwIf6NtCgMfdW/BB1po/Vtc+0xxpWFvD5G1VYhnpGXZgNokgDNVqQeYkuP6yypM+KsPFAW0vpbyPaC1879Pco6Il52LD+uhb9BUklT2cVYVbdoqyAxU+j578BPqp35WZq1Zz8C8rgHI46FxtUwggQQJ7PHK42hkdILAskIBSXRzrNYGLiOcR4WncBuiGZCuNfg53LRgZTpAZyYfD0btLwcLnNPzWcAuy7oPKrk0S/0C31FrX6Y6BhNMCkX2zo/jrp8Gw0lUIywAUltUb3EN8Tydq6jD5jTtlWxBOsYnwqZHfUAy/UArWGiYYOGB+/a9ch/w4yS8zKN34p3YHmoQw1jorEs17jKcX9VoM/jI+fcXx1FcBJ+RNtvsHtk8vNR4hWIvXeF5zY3JvT+6qe5SaZZTzSXfmL9s78DHqhQPVlSfOZqZ3PKd17+Dk33AvdjXReKNP0Ts=
+  on:
+    distributions: sdist bdist_wheel
+    repo: MaterialsDataInfrastructureConsortium/CommonMetadata
+    branch: master
