@@ -136,7 +136,7 @@ class CITPayload(PublishablePayload):
         return json.loads(pif.dumps(self.metadata))
 
     def _add_source(self):
-        if 'source' not in self or not isinstance(self['source', dict):
+        if 'source' not in self or not isinstance(self['source'], dict):
             return
 
         if 'producer' in self['source']:
