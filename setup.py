@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='matmeta',
-    version='0.1.0',
+    version='0.1.1',
     url='https://github.com/MaterialsDataInfrastructureConsortium/CommonMetadata',
     description='Common support for materials metadata',
     author='Jason Thiese',
