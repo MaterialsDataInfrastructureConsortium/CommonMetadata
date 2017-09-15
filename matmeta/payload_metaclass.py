@@ -102,16 +102,6 @@ def _citation_to_string(citation):
     references: 
         http://citrineinformatics.github.io/pif-documentation/schema_definition/common/Reference.html
         http://www.scientificstyleandformat.org/Tools/SSF-Citation-Quick-Guide.html
-
-    journals:
-        format:     Author(s). Date. Article title. Journal title. Volume(issue):location.
-        example:    Mazan MR, Hoffman AM. 2001. Effects of aerosolized albuterol on physiologic 
-                         responses to exercise in standardbreds. Am J Vet Res. 62(11):1812–1817.
-
-    books:
-        format:     Author(s). Date. Title. Edition. Place of publication: publisher. Extent. Notes.
-        example:    Leboffe MJ, Pierce BE. 2010. Microbiology: laboratory theory and application. 
-                        Englewood (CO): Morton Publishing Company.
     """
     output = ''
     sep = '. '
