@@ -17,7 +17,7 @@ import datetime
 
 
 def _citrine_metadata_requirements():
-    return None
+    return {} # no metadata is required
 
 
 def _materials_commons_metadata_requirements():
@@ -51,8 +51,101 @@ def _materials_data_facility_metadata_requirements():
         ],
         'links': {
             'landing_page': 'uri (string)'
-        }
+        },
     }
+
+
+def _validate_inputs(actual_inputs, required_inputs, keypath=None):
+    """
+    Validate inputs.  Raise exception if something is missing.
+
+    args:
+        actual_inputs:  the object/dictionary passed to a subclass of 
+            PublishablePayload
+        required_inputs: the object/dictionary containing keys (and subkeys)
+            for required fields.  (See get_common_payload_template.)
+        keypath: used internally in recursive function calls.
+
+    return:
+        Nothing.  An exception will be raised if a problem is encountered.
+    """
+    actual_keys = set(actual_inputs.keys())
+    required_keys = set(required_inputs.keys())
+    if actual_keys.intersection(required_keys) != required_keys:
+        prefix = '%s.' if keypath else ''
+        output_keys = {'%s%s' % (prefix, key) for key in required_keys}
+        raise Exception("Missing input fields.  Expected %s." % ', '.join(output_keys))
+    for key in required_keys:
+        # TODO: review the following usage of isinstance.
+        # Will this always be appropriate, given duck typing?
+        if isinstance(required_inputs[key], dict):
+            new_keypath = key if not keypath else '%s.%s' % (keypath, key)
+            _validate_inputs(
+                actual_inputs=actual_inputs[key],
+                required_inputs=required_inputs[key],
+                keypath=new_keypath
+            )
+
+
+def _citation_to_string(citation):
+    """
+    Convert citation object to a string, using standard citation formatting.  
+
+    args:
+        citation:   a dictionary potentially containing all fields from
+            pypif.obj.Reference, and possibly a few others
+
+    TODO: This is tedious and fragile.  Find a better way to get 'er done.
+    TODO: This function assumes that citations are either to books or journals.
+        urls are ignored.
+
+    references: 
+        http://citrineinformatics.github.io/pif-documentation/schema_definition/common/Reference.html
+        http://www.scientificstyleandformat.org/Tools/SSF-Citation-Quick-Guide.html
+    """
+    output = ''
+    sep = '. '
+
+    if 'authors' in citation:
+        authors = []
+        for author in citation['authors']:
+            if 'family_name' not in author:
+                continue
+            author_name = author['family_name']
+            if 'given_name' in author:
+                author_name += ' ' + author['given_name']
+            authors.append(author_name)
+        output += ', '.join(authors) + sep
+    if 'year' in citation:
+        output += str(citation['year']) + sep
+    if 'title' in citation:
+        output += citation['title'] + sep
+
+    if 'journal' in citation:
+        output += citation['journal'] + sep
+        if 'volume' in citation:
+            output += citation['volume']
+            if 'issue' in citation:
+                output += '(' + citation['issue'] + ')'
+            if 'page_location' in citation:
+                output += ':' + citation['page_location'] + sep
+    else:   # assume for now that the reference is to a book
+            # TODO(Handle url case.)
+        if 'edition' in citation:
+            output += citation['edition'] + sep
+        if 'publication_location' in citation:
+            output += citation['publication_location']
+            if 'publisher' in citation:
+                output += ': ' + citation['publisher'] + sep
+        elif 'publisher' in citation:
+            output += citation['publisher'] + sep
+        if 'extent' in citation:
+            output += citation['extent'] + sep
+        if 'notes' in citation:
+            output += citation['notes'] + sep
+
+    return output.strip()
+
 
 def get_common_payload_template(services=None):
     """
@@ -106,7 +199,11 @@ def get_common_payload_template(services=None):
                 }
             ],
             'links': {
-                'landing_page': 'uri (string)'
+                'landing_page': 'uri (string)',
+                'publication': ['uri (string)'],
+                'data_doi': 'uri (string)',
+                'related_id': ['string'],
+                'parent_id': 'string'
             },
             'authors': [
                 {
@@ -126,7 +223,31 @@ def get_common_payload_template(services=None):
                     'tags': ['string']
                 }
             ],
-            'citations': 'not yet available',
+            'citations': [
+                {
+                    'authors': [
+                        {
+                            'given_name': 'string',
+                            'family_name': 'string',
+                            'title': 'string',
+                            'orcid': 'TBD',
+                            'email': 'string',
+                            'tags': ['string']
+                        }
+                    ],
+                    'year': 'string',
+                    'title': 'string',
+                    'journal': 'string',
+                    'volume': 'string',
+                    'issue': 'string',
+                    'page_location': 'string',
+                    'edition': 'string',
+                    'publication_location': 'string',
+                    'publisher': 'string',
+                    'extent': 'string',
+                    'notes': 'string',
+                }
+            ],
             'repository': 'not yet available',
             'collection': 'not yet available',
             'tags': ['string'],
@@ -144,25 +265,13 @@ class PublishablePayload(dict):
     def __init__(self, **kwargs):
         """
         TODO: write more!!
-
-        Inheriting subclasses can define self._required_keys before running base class __init__ to validate. 
+        TODO: consider making this an abstract base class (package abc).
         """
         self.__dict__ = self
-        self._required_keys = [] # Overriden by subclass
         super(PublishablePayload, self).__init__()
-
-        for key in self._required_keys:
-            if key not in kwargs:
-                raise Exception("%s requires %s" % (self.__class__.__name__, key))
-                del kwargs[key]
-
-        self._optionalkeys = get_common_payload_template()['all_fields'].keys()
-        for prop in self._optionalkeys:
-            self[prop] = kwargs.get(prop, None)
-            if prop in kwargs: del kwargs[prop]
-
-        # All properties that are not required or optional go to additionalProperties
-        self.additionalProperties = kwargs
+        for key in get_common_payload_template()['all_fields'].keys():
+            if key in kwargs:
+                self[key] = kwargs[key]
 
     @property
     def metapayload(self):
@@ -186,7 +295,11 @@ class CITPayload(PublishablePayload):
     """
 
     def __init__(self, *args, **kwargs):
-        self._required_keys = [] # Citrine has no metadata requirements.
+        required_inputs = get_common_payload_template(services=['citrine'])['required_fields']
+        _validate_inputs(
+            required_inputs=required_inputs,
+            actual_inputs=kwargs
+        )
         super(CITPayload, self).__init__(**kwargs)        
 
     @property
@@ -195,6 +308,7 @@ class CITPayload(PublishablePayload):
         self._add_source(metadata)
         self._add_people(metadata)
         self._add_licenses(metadata)
+        self._add_citations(metadata)
         return json.loads(pif.dumps(metadata))
 
     def _add_source(self, metadata):
@@ -246,7 +360,6 @@ class CITPayload(PublishablePayload):
             add_to_people(person_list=self['data_contacts'], tags=['contact'])
         if 'data_contributors' in self and isinstance(self['data_contributors'], list):
             add_to_people(person_list=self['data_contributors'], tags=['contributor'])
-        
         metadata.contacts = people
 
     def _add_licenses(self, metadata):
@@ -263,6 +376,47 @@ class CITPayload(PublishablePayload):
                 print(ex)
 
         metadata.licenses = citrine_licenses
+    
+    def _add_citations(self, metadata):
+        if 'citations' not in self or not isinstance(self['citations'], list):
+            return 
+        # Note: the citrine type is 'Reference', not 'Citation'.
+        # http://citrineinformatics.github.io/pif-documentation/schema_definition/common/Reference.html
+        citrine_citation_fields = {
+            'doi', 'isbn', 'issn', 'url', 'title', 'publisher', 'journal',
+            'volume', 'issue', 'year', 'figure', 'table', 'pages', 'authors', 
+            'editors', 'affiliations', 'acknowledgements', 'referenes', 'tags'
+        }
+        # Note: the citrine type is 'Name', not 'Author'.
+        # http://citrineinformatics.github.io/pif-documentation/schema_definition/common/Name.html
+        citrine_author_fields = {
+            'title', 'given', 'family', 'suffix', 'tags'
+        }
+        citrine_citations = []
+        for citation in self['citations']:
+            filtered_citation_data = {
+                key: citation[key] for key in citation
+                if key in citrine_citation_fields
+            }
+            authors = []
+            if 'authors' in filtered_citation_data:
+                for author in filtered_citation_data['authors']:
+                    # fix name keys
+                    if 'given_name' in author:
+                        author['given'] = author['given_name']
+                    if 'family_name' in author:
+                        author['family'] = author['family_name']
+                    # filter keys
+                    filtered_author_data = {
+                        key: author[key] for key in author
+                        if key in citrine_author_fields
+                    }
+                    citrine_author = pobj.Name(**filtered_author_data)
+                    authors.append(citrine_author)
+            citrine_citation = pobj.Reference(**filtered_citation_data)
+            citrine_citation.authors = authors
+            citrine_citations.append(citrine_citation)
+        metadata.references = citrine_citations
 
 
 class MDFPayload(PublishablePayload):
@@ -277,14 +431,13 @@ class MDFPayload(PublishablePayload):
 
     """
 
-    def __init__(self, **kwargs):
-        # TODO(Get required keys for each service from a config file (.ini).)
-        self._required_keys = ['title', 'source', 'data_contacts', 'data_contributors', 'links']
-        super(MDFPayload, self).__init__(**kwargs)
-        if not isinstance(kwargs['source'], dict):
-            raise Exception('source must be a dictionary')
-        if 'name' not in self['source']:
-            raise Exception('source must contain "name"')
+    def __init__(self, *args, **kwargs):
+        required_inputs = get_common_payload_template(services=['materials_data_facility'])['required_fields']
+        _validate_inputs(
+            required_inputs=required_inputs,
+            actual_inputs=kwargs
+        )
+        super(MDFPayload, self).__init__(*args, **kwargs)
 
     @property
     def metapayload(self):
@@ -308,11 +461,24 @@ class MDFPayload(PublishablePayload):
         }
 
         # Populate optional keys if they have been set
-        required_keys = set(_materials_data_facility_metadata_requirements().keys())
-        optional_keys = set(get_common_payload_template()['all_fields'].keys()) -  required_keys
+        required_keys = set(
+            get_common_payload_template(
+                services=['materials_data_facility']
+            )['required_fields'].keys()
+        )
+        optional_keys = set(
+            get_common_payload_template()['all_fields'].keys()
+        ) -  required_keys
         for key in optional_keys:
+            if key in {'citations'}:
+                continue
             if key in self and self[key] is not None:
                 dataset['mdf'][key] = self[key]
+        if 'citations' in self:
+            dataset['mdf']['citation'] = [
+                _citation_to_string(citation)
+                for citation in self['citations']
+            ]
 
         return dataset
 
@@ -329,8 +495,11 @@ class MCPayload(PublishablePayload):
     """
 
     def __init__(self, *args, **kwargs):
-        # TODO(Get required keys for each service from a config file (.ini).)
-        self._required_keys = ['name', 'description']
+        required_inputs = get_common_payload_template(services=['materials_commons'])['required_fields']
+        _validate_inputs(
+            required_inputs=required_inputs,
+            actual_inputs=kwargs
+        )
         super(MCPayload, self).__init__(*args, **kwargs)
 
     @property
