@@ -346,12 +346,12 @@ class CITPayload(PublishablePayload):
                     citrine_person.name.given == new_citrine_person.name.given
                 ):
                     if new_citrine_person.tags:
-                        new_tags = list(set(new_citrine_person.tags))
+                        new_tags = set(new_citrine_person.tags)
                         if citrine_person.tags:
-                            old_tags = list(set(citrine_person.tags))
-                            citrine_person.tags = old_tags.extend(new_tags)
+                            old_tags = set(citrine_person.tags)
+                            citrine_person.tags = list(old_tags.union(new_tags))
                         else:
-                            citrine_person.tags = new_tags
+                            citrine_person.tags = list(new_tags)
                     return True 
             return False
 
