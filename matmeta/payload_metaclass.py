@@ -336,8 +336,27 @@ class CITPayload(PublishablePayload):
 
     def _add_people(self, metadata):
         people = []
-        
+        # use full names instead of ids to determine whether to add a new entry
+        # TODO: find a more elegant solution
+        def person_already_added(new_citrine_person):
+            for citrine_person in people:
+                if (
+                    citrine_person.name.family == new_citrine_person.name.family
+                    and 
+                    citrine_person.name.given == new_citrine_person.name.given
+                ):
+                    if new_citrine_person.tags:
+                        new_tags = list(set(new_citrine_person.tags))
+                        if citrine_person.tags:
+                            old_tags = list(set(citrine_person.tags))
+                            citrine_person.tags = old_tags.extend(new_tags)
+                        else:
+                            citrine_person.tags = new_tags
+                    return True 
+            return False
+
         def add_to_people(person_list, tags):
+            if tags: tags = list(tags)
             for person in person_list:
                 citrine_name_info = {
                     'given': person.get('given_name', ''),
@@ -352,7 +371,8 @@ class CITPayload(PublishablePayload):
                     'tags': tags
                 }
                 citrine_person = pobj.Person(**citrine_person_info)
-                people.append(citrine_person)
+                if not person_already_added(citrine_person):
+                    people.append(citrine_person)
                 
         if 'authors' in self and isinstance(self['authors'], list):
             add_to_people(person_list=self['authors'], tags=['author'])
